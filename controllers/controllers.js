@@ -17,29 +17,35 @@ class UserControllers{
 
             event.preventDefault();
 
+            let btn = this.formEl.querySelector(["type=submit"]);
+            btn.disabled = true;
+
             let values = this.getValues()
 
-            this.getPhoto().then(function(){
-
-            }, function(){
-
-            });
-
-            this.getPhoto((content)=>{
+            this.getPhoto().then(()=>{
 
                 values.photos = content;
-                this.addLine(values); 
+
+                this.addLine(values);
+            
+               this.formEl.reset();
+
+                btn.disabled = false;
+
+            },(e)=>{
+                console.error(e);
+
+            });  
 
             });
             
-        });
         
 
     }// fechando o metodo onSubmit
 
     getPhoto(){
 
-        return Promise(function(resolve, reject){
+        return new Promise((resolve, reject)=>{
 
         })
         let fileReader = FileReader()
@@ -50,6 +56,8 @@ class UserControllers{
                 return item;
             }
         })
+
+        let file = elements[0].files[0];
 
         fileReader.onload = () => {
 
@@ -63,7 +71,14 @@ class UserControllers{
 
         }
 
-        fileReader.readAsDataURL(file);
+        if (file){
+         
+            fileReader.readAsDataURL(file);
+        
+        }else{
+
+                 resolve();       
+        }
 
         
         
@@ -75,16 +90,31 @@ class UserControllers{
      // getValues é um metodo
 
      let user = {};
+     let isValid = true;
 
      [...this.formEl.elements].forEach (function (field, index) {
+
+        if (["name", "email", "password"].indexOf(field.name) > -1 && !field.value){
+
+        field.parentElement.classList.add("has-error");
+
+        isValid = false
+
+        }
 
      if(field.name == 'gender'){
                 
                 if(field.checked)
                     user[field.name] = field.value;
         
-                console.log('Sim', field)
+                
+              //contém um erro para corrigir -->
+              console.log('Sim', field)
             
+            }else if (field.name == "admin") {
+
+                user[field.name] = field.checked
+                
             }else{
         
                 user[field.name] = field.value;
@@ -93,6 +123,11 @@ class UserControllers{
         
         })
 
+        if (!isValid){
+
+            return false;
+            
+        }
     
         
         return new User(user.name, user.gender, user.birth, user.email,user.password, user.country, user.photo, user.admin);
@@ -102,19 +137,20 @@ class UserControllers{
     }//fechando oo metodo getValues
     
     addLine(dataUser){
-   
-        this.tableEl.innerHTML = ` 
-                 <tr>
+
+        let tr = document.createElement("tr");
+        tr.innerHTML = ` 
                      <td><img src =${dataUser.photo} alt ="User Image" class = " img-circle img-sm"> </td>
                      <td> ${dataUser.name}</td>
                      <td> ${dataUser.email}</td>
-                     <td> ${dataUser.admin}</td>
-                     <td> ${dataUser.birth}</td>
+                     <td> ${(dataUser.admin) ? "sim" : "não"}  </td>
+                     <td> ${Utils.dateFormat(dataUser.register)}</td>
                      </td>
                        <td>
                          <button type = "button" class = "btn btn-primary btn-xs btn-flat">Editar</button>
                          <button type = "button" class = "btn btn-danger btn-xs btn-flat">Exclui</button>
-                      </td>'
-                </tr>`;
-                 }
+                      </td>'`;
+   
+        this.tableEl.appendChild(tr); 
+        }
 }
